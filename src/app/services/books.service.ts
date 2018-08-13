@@ -89,11 +89,7 @@ export class BooksService {
           reject();
         },
         () => {
-          var pictureUrl = "";
-            upload.snapshot.ref.getDownloadURL().then(function(downloadURL) {
-              resolve(downloadURL);
-            });
-          //resolve(upload.snapshot.downloadURL);
+          resolve(upload.snapshot.ref.getDownloadURL());
         }
       );
       }
