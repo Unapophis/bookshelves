@@ -3,6 +3,7 @@ import { Subject } from '../../../node_modules/rxjs/Subject';
 import { Book } from '../models/book.model';
 import * as firebase from 'firebase';
 import { resolve } from 'url';
+import { promise } from '../../../node_modules/protractor';
 
 @Injectable()
 export class BooksService {
@@ -49,6 +50,17 @@ export class BooksService {
   }
 
   removeBook(book: Book) {
+    if (book.photo) {
+      const storageRef = firebase.storage().refFromURL(book.photo);
+      storageRef.delete().then(
+        () => {
+          console.log('Photo supprimée');
+        }
+      ).catch(
+        (error) => {
+        console.log('Fichier non trouvé : ' + error);
+      });
+    }
     const bookIndexToRemove = this.books.findIndex(
       (bookEl) => {
         if (bookEl === book) {
@@ -59,5 +71,32 @@ export class BooksService {
     this.books.splice(bookIndexToRemove, 1);
     this.saveBooks();
     this.emitBooks();
+  }
+
+  uploadFile(file: File) {
+    return new Promise(
+      (resolve, reject) => {
+        const almostUniqueFileName = Date.now().toString();
+        const upload = firebase.storage().ref()
+        .child('image/' + almostUniqueFileName + file.name)
+        .put(file);
+        upload.on(firebase.storage.TaskEvent.STATE_CHANGED,
+        () => {
+          console.log('Chargement...');
+        },
+        (error) => {
+          console.log('Erreur de chargement : ' + error);
+          reject();
+        },
+        () => {
+          var pictureUrl = "";
+            upload.snapshot.ref.getDownloadURL().then(function(downloadURL) {
+              resolve(downloadURL);
+            });
+          //resolve(upload.snapshot.downloadURL);
+        }
+      );
+      }
+    );
   }
 }
